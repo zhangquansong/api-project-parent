@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="main"  >
+<target name="main">
+  <move todir="../deploy/app/apps" overwrite="true">
+    <fileset dir="F:\MyPrivateGitHubProject\api-project-parent\api-project-parent\api-web/target/" erroronmissingdir="false">
+      <include name="api-web-dist.tar.gz"/>
+    </fileset>
+  </move>
+</target>
+</project>

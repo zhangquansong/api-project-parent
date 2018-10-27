@@ -1,0 +1,170 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>api-project-parent</artifactId>
+        <groupId>com.clt.api</groupId>
+        <relativePath>../pom.xml</relativePath>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>api-web</artifactId>
+    <packaging>jar</packaging>
+
+    <properties>
+        <!--wagon plugin 配置 -->
+        <service.path>/usr/local/java/project</service.path>
+        <pack.name>${project.artifactId}.jar</pack.name>
+        <remote.addr>10.0.131.154:22</remote.addr>
+        <remote.username>root</remote.username>
+        <remote.passwd>root</remote.passwd>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.clt.api</groupId>
+            <artifactId>api-service</artifactId>
+            <version>${api.service.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-fileupload</groupId>
+                    <artifactId>commons-fileupload</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/java</directory>
+                <filtering>true</filtering>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                    <exclude>**/*.yml</exclude>
+                </excludes>
+            </resource>
+            <!--指定资源的位置 -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>application.yml</include>
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <!-- 添加index则不从mainfest中读取classpath，而是从Index.list中读取 -->
+                        <!-- <index>true</index> -->
+                        <manifest>
+                            <mainClass>${start-web-class}</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>./</classpathPrefix>
+                        </manifest>
+                        <manifestEntries>
+                            <Class-Path>../conf/</Class-Path>
+                        </manifestEntries>
+                    </archive>
+                    <excludes>
+                        <exclude>**/*.yml</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/*.properties</exclude>
+                        <exclude>**/CER</exclude>
+                        <exclude>**/*.cer</exclude>
+                        <exclude>**/*.pfx</exclude>
+                        <exclude>config/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-assembly-dev</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <skipAssembly>${skipAssemblyDev}</skipAssembly>
+                            <descriptors>
+                                <descriptor>../deploy/app/assembly/assembly-bate.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>make-assembly-prod</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <skipAssembly>${skipAssemblyProd}</skipAssembly>
+                            <descriptors>
+                                <descriptor>../deploy/app/assembly/assembly-prod.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>bate</id>
+                        <phase>package</phase>
+                        <configuration>
+                            <tasks>
+                                <move todir="../deploy/app/apps" overwrite="true">
+                                    <fileset dir="${basedir}/target/" erroronmissingdir="false">
+                                        <include name="api-web-dist.tar.gz"/>
+                                    </fileset>
+                                </move>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>wagon-maven-plugin</artifactId>
+                <version>1.0</version>
+                <executions>
+                    <execution>
+                        <id>upload-deploy</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>upload-single</goal>
+                            <goal>sshexec</goal>
+                        </goals>
+                        <configuration>
+                            <fromFile>../deploy/app/apps/api-web-dist.tar.gz</fromFile>
+                            <url>
+                                <![CDATA[scp://${remote.username}:${remote.passwd}@${remote.addr}${service.path}]]></url>
+                            <commands>
+                                <command>
+                                    <![CDATA[tar -zxmvf /usr/local/java/project/api-web-dist.tar.gz -C /usr/local/java/project]]></command>
+                                <command><![CDATA[nohup /usr/local/java/project/api-web/bin/start.sh restart &]]></command>
+                                <command><![CDATA[sleep 2]]></command>
+                                <command><![CDATA[ps -ef|grep api-web-1.0.0-SNAPSHOT.jar]]></command>
+                            </commands>
+                            <skip>${skipUpload}</skip>
+                            <displayCommandOutputs>true</displayCommandOutputs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
