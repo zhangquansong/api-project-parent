@@ -35,6 +35,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User selectByPrimaryKey(Long id) {
+        return testUserDao.selectByPrimaryKey(id);
+    }
+
+    @Override
     public void insert(User user) {
         testUserDao.insert(user);
     }

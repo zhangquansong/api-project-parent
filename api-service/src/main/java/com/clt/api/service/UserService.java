@@ -19,5 +19,7 @@ public interface UserService {
      */
     Page<User> findByPage(int pageNo, int pageSize);
 
+    User selectByPrimaryKey(Long id);
+
     void insert(User person);
 }
