@@ -24,7 +24,7 @@ public class UserController {
 
     @GetMapping("/user/listPage")
     public PageInfo<User> listPage() {
-        Page<User> users = userService.findByPage(1, 2);
+        Page<User> users = userService.findByPage(1, 20);
         // 需要把Page包装成PageInfo对象才能序列化。该插件也默认实现了一个PageInfo
         PageInfo<User> pageInfo = new PageInfo<>(users);
         return pageInfo;
